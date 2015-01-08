@@ -8,11 +8,11 @@
  */
 package tracer;
 
-import java.awt.BorderLayout;
 import java.awt.Graphics;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFrame;
+import tracer.mode.FullStriped;
 
 /**
  * A simple raytracer.
@@ -46,7 +46,6 @@ public class SimpleRay
     {
         frame = new JFrame(title);
         
-        // frame.setSize(1000, 600);
         frame.setSize(width, height);
         
         // frame.setResizable(false);
@@ -54,8 +53,7 @@ public class SimpleRay
         
         displayPanel = new DisplayPanel();
         
-        tracer = new Tracer(displayPanel);
-        tracer.createWorkers(1);
+        tracer = new FullStriped(displayPanel, 2);
         
         tracer.setSamplingRate(0.5);
         
@@ -96,9 +94,9 @@ public class SimpleRay
                     {
                         t1 = t;
 
-                        tracer.moveSphere();
+                        tracer.updateScene();
                         
-                        tracer.nextFrame(gr);
+                        tracer.render(gr);
                         
                         displayPanel.switchBuffers();                       
                         

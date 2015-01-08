@@ -10,6 +10,7 @@ package tracer;
 
 import java.awt.Graphics;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -26,16 +27,15 @@ import tracer.objects.Material;
  * 
  * @author Hj. Malthaner
  */
-public class Tracer
-{
-    private final DisplayInterface displayPanel;
+abstract public class Tracer {
+    public final DisplayInterface displayPanel;
     
     double samplingRate = 1.0;
-    private final V3 camera;
+    public final V3 camera;
     private final V3 lookAt;
-    private final V3 look;
-    private final V3 horz;
-    private final V3 vert;
+    public final V3 look;
+    public final V3 horz;
+    public final V3 vert;
     
     private final V3 light;
     
@@ -43,7 +43,7 @@ public class Tracer
     
     public SceneObject[] obj; //array cached version
     
-    private final ArrayList<WorkerThread> workers;
+    public List<WorkerThread> workers;
     
     private volatile int doneCount;
     
@@ -57,6 +57,8 @@ public class Tracer
     private V3 move1;
     private V3 move2;
     private V3 move3;
+    private int minBrightness = 16;
+    private int initialBrightness = 255;
     
     
     
@@ -64,7 +66,6 @@ public class Tracer
     {
         this.displayPanel = panel;
         this.objects = new ArrayList<SceneObject>();
-        this.workers = new ArrayList<WorkerThread>();
         this.doneCount = 0;
 
         camera = new V3();
@@ -83,18 +84,18 @@ public class Tracer
         setup();
     }
     
-    public void createWorkers(int count)
+    public void createWorkers()
     {
-        for(int i=0; i<count; i++)
-        {
-            workers.add(new WorkerThread(this, i));
-        }
+        
+        workers = newWorkers();
         
         for(WorkerThread worker : workers)
         {
             worker.start();
         }
     }
+    
+    abstract protected List<WorkerThread> newWorkers();
     
     public void setCamera(V3 camera)
     {
@@ -156,29 +157,7 @@ public class Tracer
         objects.add(sphere3);
     }
     
-    public void calculateScene()
-    {
-        final int height = displayPanel.height();
-        final int width = displayPanel.width();
-        final int hh = height >> 1;
-        
-        final int stripe = height / workers.size() + 1;
-        
-        for(int i=0; i<workers.size(); i++)
-        {
-            final int yStart = -hh + i * stripe;
-            final int yEnd = Math.min(hh, yStart + stripe);
-            
-            WorkerThread worker = workers.get(i);
-            worker.startRendering(yStart, yEnd, width);
-
-            synchronized(worker)
-            {
-                worker.notify();
-            }
-        }
-        // System.err.println("frame1=" + one.frame + " frame2=" + two.frame);
-    }
+    abstract public void calculateScene();
 
     public synchronized void workerDone()
     {
@@ -214,59 +193,7 @@ public class Tracer
         }
     }
 
-    void calculateScene(int yStart, int yEnd, TracerDataSet data)
-    {
-        //calculateSceneComplete(yStart,yEnd,data);
-        //calculateSceneHoriSample(yStart, yEnd, data);
-        calculateSceneRandomSample(yStart,yEnd,data);
-    }
 
-    void calculateSceneComplete(int yStart, int yEnd, TracerDataSet data)
-    {
-        int width = displayPanel.width();
-        int height = displayPanel.height();
-        
-        data.updateLinepix(width);
-        
-        final int hw = width >> 1;
-        final int hh = height >> 1;
-        
-        final V3 lineV = data.lineV;
-        
-        final int[] line = data.linepix;
-        
-        
-        for(int y=yEnd; y>yStart; y--)
-        {
-            lineV.set(look);
-            lineV.add(vert, y);
-            
-            final V3 ray = data.ray;
-            
-            for(int x=-hw; x<hw; x++)
-            {
-                ray.set(lineV);
-                ray.add(horz, x);
-                
-                
-                data.p.set(camera);
-                
-                final int rgb = traceObjects(data);
-
-            
-                int px = x;
-                int i = hw+px;
-                //if (i >= width) i = width-1;
-                line[i] = rgb;
-            }          
-            
-            int py = y;
-            int ty = hh-py;
-            //if (ty < 0) ty = 0;
-                    
-            displayPanel.setline(ty, line);
-        }                
-    }
     
     void calculateSceneHoriSample(int yStart, int yEnd, TracerDataSet data)
     {
@@ -376,10 +303,10 @@ public class Tracer
     }
     
     
-    private int traceObjects(TracerDataSet data)
+    public int traceObjects(TracerDataSet data)
     {
         boolean go;
-        int brightness = 255;
+        float brightness = initialBrightness;
         
         long objectRgb = -1;
         
@@ -397,7 +324,7 @@ public class Tracer
                 {
                     // mirror, p and v are set up by hit().
                     go = true;
-                    brightness = brightness * 230 >> 8;
+                    brightness = mirrorReflect(brightness);
                 }
                 else
                 {
@@ -405,7 +332,7 @@ public class Tracer
                 }
             }
         }
-        while(go && brightness > 16);
+        while(go && brightness > minBrightness);
 
         if(objectRgb == -1)
         {
@@ -429,7 +356,7 @@ public class Tracer
             if(data.bestObject != null)
             {
                 // shadow
-                brightness = brightness * 160 >> 8;
+                brightness = shadowReflect(brightness);
             }
         }
         
@@ -437,10 +364,9 @@ public class Tracer
         {
             return brightness >= 160 ? 0x00000000 : 0xFF000000;  
         }
-        else
-        {
-        return RGB.shadeAndCompact(objectRgb, brightness);
-    }
+        else  {
+            return RGB.shadeAndCompact(objectRgb, (int)brightness);
+        }
     }
 
     final double findIntersection(TracerDataSet data) {
@@ -451,14 +377,10 @@ public class Tracer
         
         final int numObj = obj.length;
         for(int i=numObj-1; i>=0; i--) {
-            //data.tmpP.set(data.p);
-            //data.tmpRay.set(data.ray);
             final SceneObject object = obj[i];
-            //final double t = object.trace(data.tmpP, data.tmpRay, raylen2);
             final double t = object.trace(data.p, data.ray, raylen2);
 
-            if(t >= 0 && t < bestT)
-            {
+            if(t >= 0 && t < bestT) {
                 data.bestObject = object;
                 bestT = t;
             }
@@ -476,7 +398,7 @@ public class Tracer
         }
     }
 
-    public void moveSphere()
+    public void updateScene()
     {
         
         look.x = Math.sin(frame/10f)*1;
@@ -554,7 +476,7 @@ public class Tracer
         move.y -= y;
     }
 
-    synchronized void nextFrame(Graphics gr)
+    synchronized void render(Graphics gr)
     {
         calculateScene();
         displayPanel.paint(gr);
@@ -581,6 +503,14 @@ public class Tracer
 
     public void setSamplingRate(double samplingRate) {
         this.samplingRate = samplingRate;
+    }
+
+    private float mirrorReflect(float brightness) {
+        return brightness * 0.9f;
+    }
+
+    private float shadowReflect(float brightness) {
+        return brightness/2;
     }
     
     

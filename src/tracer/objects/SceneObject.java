@@ -27,4 +27,6 @@ public interface SceneObject
     public void translate(V3 move);
 
     public V3 getPos();
+
+    
 }

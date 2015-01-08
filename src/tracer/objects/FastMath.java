@@ -27,4 +27,9 @@ public class FastMath {
         return BIG_ENOUGH_INT - (int) (BIG_ENOUGH_FLOOR - x); // credit: roquen
     }
     
+    public static float max(float a, float b) {
+        if (a > b) return a;
+        return b;
+    }
+    
 }

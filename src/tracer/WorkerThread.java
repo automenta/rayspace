@@ -19,13 +19,10 @@ import java.util.logging.Logger;
  * 
  * @author Hj. Malthaner
  */
-public class WorkerThread extends Thread
-{
+abstract public class WorkerThread extends Thread {
     private final Tracer tracer;
-    private int yStart;
-    private int yEnd;
     volatile boolean go;
-    private final TracerDataSet tracerData;;
+    public final TracerDataSet tracerData;
 
     public WorkerThread(Tracer tracer, int i)
     {
@@ -36,45 +33,39 @@ public class WorkerThread extends Thread
         
         setDaemon(true);
     }
-    
-    public void startRendering(int yStart, int yEnd, int width)
-    {
-        this.yStart = yStart;
-        this.yEnd = yEnd;
 
-        
-    }
 
     @Override
     public void run()
-    {
-        calculate();
-    }
-
-      synchronized void shutdown() {
-        go = false;
-        notify();
-    }
-      
-    private synchronized void calculate()
     {
         while(go)
         {
             try
             {
                 // System.err.println(getName() + " waiting");
-                wait();
+                synchronized(this) {
+                    wait();
+                }
                 
                 // System.err.println(getName() + " starting yStart=" + yStart + " yEnd=" + yEnd);
-                tracer.calculateScene(yStart, yEnd, tracerData);            
+                calculate();
+                
                 // frame ++;
                 // System.err.println(getName() + " done, frame=" + frame);
                 tracer.workerDone();
             }
-            catch (InterruptedException ex)
+            catch (Exception ex)
             {
                 Logger.getLogger(WorkerThread.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }
+
+    synchronized void shutdown() {
+        go = false;
+        notify();
+    }
+    
+    abstract protected void calculate();
+      
 }
