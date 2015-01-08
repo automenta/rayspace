@@ -6,9 +6,9 @@
  * 
  * author: Hj. Malthaner <h_malthaner@users.sourceforge.net>
  */
-package tracer2x.objects;
+package tracer.objects;
 
-import tracer2x.V3;
+import tracer.V3;
 
 /**
  * A plane which is transparent but will carry shadows.

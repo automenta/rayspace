@@ -216,8 +216,9 @@ public class Tracer
 
     void calculateScene(int yStart, int yEnd, TracerDataSet data)
     {
-        calculateSceneComplete(yStart,yEnd,data);
-        //calculateSceneRandomSample(yStart,yEnd,data);
+        //calculateSceneComplete(yStart,yEnd,data);
+        //calculateSceneHoriSample(yStart, yEnd, data);
+        calculateSceneRandomSample(yStart,yEnd,data);
     }
 
     void calculateSceneComplete(int yStart, int yEnd, TracerDataSet data)
@@ -300,13 +301,13 @@ public class Tracer
                 final int rgb = traceObjects(data);
 
             
-                int px = FastMath.fastRound(x);
+                int px = FastMath.round(x);
                 int i = hw+px;
                 if (i >= width) i = width-1;
                 line[i] = rgb;
             }          
             
-            int py = FastMath.fastRound(y);
+            int py = FastMath.round(y);
             int ty = hh-py;
             if (ty < 0) ty = 0;
                     

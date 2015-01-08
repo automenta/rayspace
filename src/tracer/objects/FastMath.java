@@ -15,15 +15,15 @@ public class FastMath {
     private static final double BIG_ENOUGH_ROUND = BIG_ENOUGH_INT + 0.5;
     public final static double EPSILON = 0.0001;
 
-    public static final int fastFloor(double x) {
+    public static final int floor(double x) {
         return (int) (x + BIG_ENOUGH_FLOOR) - BIG_ENOUGH_INT;
     }
 
-    public static int fastRound(double x) {
+    public static int round(double x) {
         return (int) (x + BIG_ENOUGH_ROUND) - BIG_ENOUGH_INT;
     }
 
-    public static int fastCeil(float x) {
+    public static int ceil(float x) {
         return BIG_ENOUGH_INT - (int) (BIG_ENOUGH_FLOOR - x); // credit: roquen
     }
     

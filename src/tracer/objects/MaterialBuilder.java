@@ -6,7 +6,7 @@
  * 
  * author: Hj. Malthaner <h_malthaner@users.sourceforge.net>
  */
-package tracer2x.objects;
+package tracer.objects;
 
 /**
  *

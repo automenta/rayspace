@@ -79,8 +79,8 @@ public class Plane extends AbstractSceneObject {
             final int f = px + py & 1;
 
             if (f == 0) {
-                double fractX = p.x - FastMath.fastFloor(p.x);
-                double fractY = p.y - FastMath.fastFloor(p.y);
+                double fractX = p.x - FastMath.floor(p.x);
+                double fractY = p.y - FastMath.floor(p.y);
 
                 final int tx = (int) (Textures.sand.getWidth() * fractX);
                 final int ty = (int) (Textures.sand.getHeight() * fractY);

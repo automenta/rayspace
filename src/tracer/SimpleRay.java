@@ -57,7 +57,7 @@ public class SimpleRay
         tracer = new Tracer(displayPanel);
         tracer.createWorkers(1);
         
-        tracer.setSamplingRate(0.3);
+        tracer.setSamplingRate(0.5);
         
         tracer.buildScene();
         tracer.commitScene();
