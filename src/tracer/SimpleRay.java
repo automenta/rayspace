@@ -21,7 +21,7 @@ import javax.swing.JFrame;
  */
 public class SimpleRay
 {
-    private static final String title = "HjM's SimpleRay Demo r6";
+    private static final String title = "RaySpace";
     
     /**
      * @param args the command line arguments
@@ -29,7 +29,7 @@ public class SimpleRay
     public static void main(String[] args)
     {
         SimpleRay app;
-        app = new SimpleRay();
+        app = new SimpleRay(800, 600);
         app.start();
     }
 
@@ -42,21 +42,25 @@ public class SimpleRay
         return frame;
     }
     
-    public SimpleRay()
+    public SimpleRay(int width, int height)
     {
         frame = new JFrame(title);
-        frame.setLayout(new BorderLayout());
+        
         // frame.setSize(1000, 600);
-        frame.setSize(800, 600);
+        frame.setSize(width, height);
+        
         // frame.setResizable(false);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         
         displayPanel = new DisplayPanel();
         
         tracer = new Tracer(displayPanel);
-        tracer.createWorkers(2);
+        tracer.createWorkers(1);
+        
+        tracer.setSamplingRate(0.3);
         
         tracer.buildScene();
+        tracer.commitScene();
         
         frame.add(displayPanel);
         

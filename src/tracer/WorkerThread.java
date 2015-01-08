@@ -42,7 +42,7 @@ public class WorkerThread extends Thread
         this.yStart = yStart;
         this.yEnd = yEnd;
 
-        tracerData.updateLinepix(width);
+        
     }
 
     @Override

@@ -24,4 +24,8 @@ public interface DisplayInterface
     public void setline(int y, int[] linepix);
 
     public void paint(Graphics gr);
+
+    public int height();
+
+    public int width();
 }

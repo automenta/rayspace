@@ -10,8 +10,10 @@ package tracer;
 
 import java.awt.Graphics;
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import tracer.objects.FastMath;
 import tracer.objects.FastSphere;
 import tracer.objects.Plane;
 import tracer.objects.SceneObject;
@@ -28,6 +30,7 @@ public class Tracer
 {
     private final DisplayInterface displayPanel;
     
+    double samplingRate = 1.0;
     private final V3 camera;
     private final V3 lookAt;
     private final V3 look;
@@ -37,6 +40,9 @@ public class Tracer
     private final V3 light;
     
     private final ArrayList<SceneObject> objects;
+    
+    public SceneObject[] obj; //array cached version
+    
     private final ArrayList<WorkerThread> workers;
     
     private volatile int doneCount;
@@ -51,6 +57,7 @@ public class Tracer
     private V3 move1;
     private V3 move2;
     private V3 move3;
+    
     
     
     public Tracer(DisplayInterface panel)
@@ -151,8 +158,8 @@ public class Tracer
     
     public void calculateScene()
     {
-        final int height = displayPanel.getHeight();
-        final int width = displayPanel.getWidth();
+        final int height = displayPanel.height();
+        final int width = displayPanel.width();
         final int hh = height >> 1;
         
         final int stripe = height / workers.size() + 1;
@@ -209,33 +216,165 @@ public class Tracer
 
     void calculateScene(int yStart, int yEnd, TracerDataSet data)
     {
-        int width = data.linepix.length;
-        int height = displayPanel.getHeight();
+        calculateSceneComplete(yStart,yEnd,data);
+        //calculateSceneRandomSample(yStart,yEnd,data);
+    }
+
+    void calculateSceneComplete(int yStart, int yEnd, TracerDataSet data)
+    {
+        int width = displayPanel.width();
+        int height = displayPanel.height();
+        
+        data.updateLinepix(width);
         
         final int hw = width >> 1;
         final int hh = height >> 1;
         
+        final V3 lineV = data.lineV;
+        
+        final int[] line = data.linepix;
+        
+        
         for(int y=yEnd; y>yStart; y--)
         {
-            data.lineV.set(look);
-            data.lineV.add(vert, y);
+            lineV.set(look);
+            lineV.add(vert, y);
+            
+            final V3 ray = data.ray;
             
             for(int x=-hw; x<hw; x++)
             {
-                data.ray.set(data.lineV);
-                data.ray.add(horz, x);
+                ray.set(lineV);
+                ray.add(horz, x);
+                
                 
                 data.p.set(camera);
                 
                 final int rgb = traceObjects(data);
 
-                data.linepix[hw+x] = rgb;
+            
+                int px = x;
+                int i = hw+px;
+                //if (i >= width) i = width-1;
+                line[i] = rgb;
             }          
-            displayPanel.setline(hh-y, data.linepix);
+            
+            int py = y;
+            int ty = hh-py;
+            //if (ty < 0) ty = 0;
+                    
+            displayPanel.setline(ty, line);
         }                
     }
     
+    void calculateSceneHoriSample(int yStart, int yEnd, TracerDataSet data)
+    {
+        int width = displayPanel.width();
+        int height = displayPanel.height();
+        
+        data.updateLinepix(width);
+        
+        final int hw = width >> 1;
+        final int hh = height >> 1;
+        
+        final V3 lineV = data.lineV;
+        
+        final int[] line = data.linepix;
+        
+        final Random rng = data.rng;
+        
+        for(double y=yEnd; y>yStart; y-=nextDY(rng))
+        {
+            lineV.set(look);
+            lineV.add(vert, y);
+            
+            final V3 ray = data.ray;
+            
+            for(double x=-hw; x<hw; x+=nextDX(rng))
+            {
+                ray.set(lineV);
+                ray.add(horz, x);
+                
+                data.p.set(camera);            
+                
+                final int rgb = traceObjects(data);
 
+            
+                int px = FastMath.fastRound(x);
+                int i = hw+px;
+                if (i >= width) i = width-1;
+                line[i] = rgb;
+            }          
+            
+            int py = FastMath.fastRound(y);
+            int ty = hh-py;
+            if (ty < 0) ty = 0;
+                    
+            displayPanel.setline(ty, line);
+        }                
+    }
+    
+    /** # pixels to move horizontally */
+    public double nextDX(Random rng) {
+        if (samplingRate == 1.0) return 1.0;
+        return rng.nextFloat() * 1.0/samplingRate;
+    }
+    
+    /** # pixels to move vertically */
+    public double nextDY(Random rng) {
+        return 1.0;
+        //if (samplingRate == 1.0) return 1.0;
+        //return rng.nextFloat() * 1.0/samplingRate * 0.01;
+    }
+
+    void calculateSceneRandomSample(int yStart, int yEnd, TracerDataSet data)
+    {
+        int width = displayPanel.width();
+        int height = displayPanel.height();
+        int hrange = yEnd - yStart;
+        
+        
+        data.updateLinepix(width * height);
+        
+        final int hw = width >> 1;
+        final int hh = height >> 1;
+        
+        yStart += hh;
+        yEnd += hh;
+        
+        final V3 lineV = data.lineV;
+
+        
+        final int[] line = data.linepix;
+        
+        final Random rng = data.rng;
+        
+        int points = (int) ((width * height) * samplingRate);
+        final V3 ray = data.ray;
+        for ( ; points > 0; points--) {
+            float vx = (-0.5f + rng.nextFloat()) * width;
+            float vy = (-0.5f + rng.nextFloat()) * height;
+            int px = (int) (vx+hw);
+            int py = (int) (hh-vy);
+            ray.set(look);
+            ray.add(vert, vy);
+            ray.add(horz, vx-0.5);
+            
+            data.p.set(camera);
+            
+            
+            final int rgb = traceObjects(data);
+            int i = ((py))*width+px;
+            
+            if (i >=0 && i < line.length)
+                line[i] = rgb;
+            //else..
+            
+        }
+        displayPanel.setline(0, line);
+    }
+    
+    
     private int traceObjects(TracerDataSet data)
     {
         boolean go;
@@ -303,19 +442,19 @@ public class Tracer
     }
     }
 
-    private double findIntersection(TracerDataSet data)
-    {
+    final double findIntersection(TracerDataSet data) {
         final double raylen2 = data.ray.length2();
 
         double bestT = Double.MAX_VALUE;
         data.bestObject = null;
         
-        for(int i=0; i<objects.size(); i++)
-        {
-            data.tmpP.set(data.p);
-            data.tmpRay.set(data.ray);
-            final SceneObject object = objects.get(i);
-            final double t = object.trace(data.tmpP, data.tmpRay, raylen2);
+        final int numObj = obj.length;
+        for(int i=numObj-1; i>=0; i--) {
+            //data.tmpP.set(data.p);
+            //data.tmpRay.set(data.ray);
+            final SceneObject object = obj[i];
+            //final double t = object.trace(data.tmpP, data.tmpRay, raylen2);
+            final double t = object.trace(data.p, data.ray, raylen2);
 
             if(t >= 0 && t < bestT)
             {
@@ -339,7 +478,8 @@ public class Tracer
     public void moveSphere()
     {
         
-        camera.x = Math.sin(frame/10f);
+        look.x = Math.sin(frame/10f)*1;
+        look.z = Math.cos(frame/20f)*1;
         
         move3.z -= 0.002; // Gravity
         
@@ -432,4 +572,15 @@ public class Tracer
         
         // System.err.println("Now having " + objects.size() + " objects.");
     }
+
+    /** call after loading objects to 'compile' it.. more post-processing can be done here */
+    void commitScene() {
+        obj = objects.toArray(new SceneObject[objects.size()]);
+    }
+
+    public void setSamplingRate(double samplingRate) {
+        this.samplingRate = samplingRate;
+    }
+    
+    
 }

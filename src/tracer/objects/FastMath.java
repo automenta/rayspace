@@ -19,7 +19,7 @@ public class FastMath {
         return (int) (x + BIG_ENOUGH_FLOOR) - BIG_ENOUGH_INT;
     }
 
-    public static int fastRound(float x) {
+    public static int fastRound(double x) {
         return (int) (x + BIG_ENOUGH_ROUND) - BIG_ENOUGH_INT;
     }
 
