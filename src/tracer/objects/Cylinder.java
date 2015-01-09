@@ -28,8 +28,22 @@ public class Cylinder extends AbstractSceneObject
     private Plane cap1;
     private Plane cap2;
     
-    public Cylinder(V3 pos1, V3 pos2, double rad)
-    {
+    public class CylinderCap extends Plane {
+
+        public CylinderCap(V3 pos, V3 normal) {
+            super(pos, normal);
+        }
+
+       
+        
+        @Override
+        public long hit(V3 p, V3 ray, V3 light, double t) {
+            return Cylinder.this.hit(p, ray, light, t);
+        }
+        
+    }
+    
+    public Cylinder(V3 pos1, V3 pos2, double rad) {
         super();
         
         this.pos1 = pos1;
@@ -41,9 +55,8 @@ public class Cylinder extends AbstractSceneObject
         r2 = rad*rad;
         len2 = direction.length2();
         
-        cap1 = new Plane(pos1, direction);
-        
-        cap2 = new Plane(pos2, direction);        
+        cap1 = new CylinderCap(pos1, direction);        
+        cap2 = new CylinderCap(pos2, direction);        
     }
     
     @Override

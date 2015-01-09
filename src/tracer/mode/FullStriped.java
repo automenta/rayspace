@@ -8,6 +8,7 @@ package tracer.mode;
 import java.util.ArrayList;
 import java.util.List;
 import tracer.DisplayInterface;
+import tracer.Display;
 import tracer.Tracer;
 import tracer.TracerDataSet;
 import tracer.V3;
@@ -19,6 +20,7 @@ import tracer.WorkerThread;
  */
 public class FullStriped extends Tracer {
     private final int threads;
+    private Display display;
 
     class FSWorkerThread extends WorkerThread {
         public int yStart;
@@ -41,8 +43,8 @@ public class FullStriped extends Tracer {
         
     }
     
-    public FullStriped(DisplayInterface panel, int threads) {
-        super(panel);
+    public FullStriped(int threads) {
+        super();
         this.threads = threads;
         createWorkers();
         
@@ -61,9 +63,10 @@ public class FullStriped extends Tracer {
     
     
     @Override
-    public void calculateScene()
+    public void render(Display displayPanel)
     {
         
+        this.display = displayPanel;
         
         final int height = displayPanel.height();
         final int width = displayPanel.width();
@@ -89,8 +92,8 @@ public class FullStriped extends Tracer {
     
     void render(int yStart, int yEnd, TracerDataSet data)    {
         
-        int width = displayPanel.width();
-        int height = displayPanel.height();
+        int width = display.width();
+        int height = display.height();
         
         data.updateLinepix(width);
         
@@ -130,7 +133,7 @@ public class FullStriped extends Tracer {
             int ty = hh-py;
             //if (ty < 0) ty = 0;
                     
-            displayPanel.setline(ty, line);
+            display.setline(ty, line);
         }                
     }
 

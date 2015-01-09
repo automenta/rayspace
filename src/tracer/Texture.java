@@ -18,6 +18,10 @@ import java.awt.image.BufferedImage;
  */
 public class Texture
 {
+    
+    //float translateX, translateY;
+    //float scaleX, scaleY;
+    
     private final int width;
     private final int height;
     private final int [] rgb;
@@ -32,14 +36,14 @@ public class Texture
     }
     
     
-    public final int getRGB(int x, int y)
+    public int getRGB(int x, int y)
     {
         return rgb[y*width + x];
     }
 
-    public final int getRGB(double s, double t)
+    public int getRGB(double s, double t)
     {
-        return rgb[width * (int)(t*height) + (int)(s*width)];
+        return getRGB((int)(s*width), (int)(t*height));
     }
 
     public final int getWidth()

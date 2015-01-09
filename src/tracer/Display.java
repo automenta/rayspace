@@ -27,7 +27,7 @@ import javax.swing.JPanel;
  *
  * @author Hj. Malthaner
  */
-public class DisplayPanel extends JPanel implements DisplayInterface {
+public class Display extends JPanel implements DisplayInterface {
 
     private BufferedImage bufferImg1;
     private BufferedImage bufferImg2;
@@ -54,7 +54,7 @@ public class DisplayPanel extends JPanel implements DisplayInterface {
 
     
     
-    public DisplayPanel() {
+    public Display() {
         super(new BorderLayout());
         setOpaque(false);
 

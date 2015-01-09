@@ -27,7 +27,7 @@ public class ShadowPlane extends Plane
     {
         p.add(ray, t*ALMOST_ONE);
     
-        // fully transparent black
         return 0xFF00000000000000L;
     }
+    
 }

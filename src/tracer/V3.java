@@ -141,6 +141,7 @@ public class V3
         x += other.x;
         y += other.y;
         z += other.z;
+        
     }
 
     public final void div(final double d)

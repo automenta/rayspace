@@ -43,7 +43,15 @@ public class TexturePatch extends AbstractSceneObject
         this.forward.norm();
         this.right.norm();
         
-        this.plane = new Plane(pos, up);
+        this.plane = new Plane(pos, up) {
+
+            @Override
+            public long hit(V3 p, V3 ray, V3 light, double t) {
+                return TexturePatch.this.hit(p, ray, light, t);
+            }
+          
+            
+        };
     }
         
     @Override
